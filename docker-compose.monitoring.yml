@@ -1,0 +1,42 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+    volumes:
+      - ./monitoring_config/prometheus.yaml:/etc/prometheus.yaml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    volumes:
+      - ./monitoring_config/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./monitoring_config/dashboards/:/etc/grafana/provisioning/dashboards/
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor traceQLStreaming metricsSummary
+    ports:
+      - "3000:3000"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: unstract-cadvisor
+    privileged: true
+    command:
+      - --enable_metrics=app,cpu,cpuLoad,disk,diskIO,memory,network,oom_event,percpu,perf_event,process
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - 8081:8080
+    restart: always

@@ -1,0 +1,26 @@
+include:
+  - docker-compose.monitoring.yml
+services:
+  web:
+    container_name: performance-testing-web
+    build: app/
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+        reservations:
+          cpus: '1'
+    command: [
+      "gunicorn",
+      "-b", "0.0.0.0:5000",
+      "--workers=1",
+      "--threads=1",
+      "-k", "gthread",
+      "--keep-alive=30",
+      "--timeout=30",
+      "--capture-output",
+      "--access-logfile", "-",
+      "app:app"
+    ]
+    ports:
+      - "5000:5000"
